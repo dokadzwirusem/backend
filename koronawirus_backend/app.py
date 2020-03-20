@@ -1,4 +1,4 @@
-from .wiating_backend import create_app
+from .koronawirus import create_app
 from .config import DefaultConfig
 
 

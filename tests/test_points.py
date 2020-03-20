@@ -5,7 +5,7 @@ import pytest
 
 @pytest.fixture
 def elastic_mock(mocker):
-    return mocker.patch('wiating_backend.points.Elasticsearch', autospec=True)
+    return mocker.patch('koronawirus_backend.points.Elasticsearch', autospec=True)
 
 
 def test_get_get_point(client, elastic_mock):

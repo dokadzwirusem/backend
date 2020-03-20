@@ -5,7 +5,7 @@ from wiating_backend.config import BaseConfig
 
 @pytest.fixture
 def env_mock(mocker):
-    mocker.patch('wiating_backend.config.find_dotenv', autospec=True, return_value=None)
+    mocker.patch('koronawirus_backend.config.find_dotenv', autospec=True, return_value=None)
 
     env_mock = dict()
     env_mock['DEBUG'] = False
@@ -28,12 +28,12 @@ def env_mock(mocker):
     env_mock['INDEX_NAME'] = "some_name"
     env_mock['QUEUE_NAME'] = "another_name"
 
-    mocker.patch('wiating_backend.config.env', spec=env_mock)
+    mocker.patch('koronawirus_backend.config.env', spec=env_mock)
 
 
 @pytest.fixture
 def dashboard_mock(mocker):
-    mocker.patch('wiating_backend.wiating_backend.dashboard', autospec=True)
+    mocker.patch('koronawirus_backend.koronawirus_backend.dashboard', autospec=True)
 
 
 @pytest.fixture
