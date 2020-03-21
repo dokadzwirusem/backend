@@ -94,7 +94,7 @@ def set_availability():
     if availability not in ['short', 'moderate', 'long']:
         abort(500)
     es = Elasticsearch(current_app.config['ES_CONNECTION_STRING'], index=current_app.config['INDEX_NAME'])
-    return es.modify_point(point_id=params['id'], waiting_time=params['waiting_time'], user_sub='anonymous',
+    return es.modify_point(point_id=params['id'], waiting_time=params['availability'], user_sub='anonymous',
                            name=NotDefined(),
                            operator=NotDefined(),
                            address=NotDefined(),
