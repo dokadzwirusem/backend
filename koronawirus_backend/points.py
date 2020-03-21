@@ -1,8 +1,6 @@
-from flask import Blueprint, current_app, request
+from flask import abort, Blueprint, current_app, request
 from .auth import requires_auth, moderator, check_rights
 from .elastic import Elasticsearch, NotDefined
-
-
 
 points = Blueprint('points', __name__, )
 
@@ -54,7 +52,8 @@ def add_point(user):
     return es.add_point(name=req_json['name'], operator=req_json['operator'], address=req_json['address'],
                         lat=req_json['lat'], lon=req_json['lon'], point_type=req_json['type'],
                         opening_hours=req_json['opening_hours'], phone=req_json.get('phone'),
-                        prepare_instruction=req_json['prepare_instruction'], user_sub=sub)
+                        prepare_instruction=req_json['prepare_instruction'], waiting_time=req_json['waiting_time'],
+                        user_sub=sub)
 
 
 @points.route('/get_my_points', methods=['POST'])
@@ -84,7 +83,28 @@ def modify_point(user):
                            phone=req_json.get('phone', NotDefined()),
                            prepare_instruction=req_json.get('prepare_instruction', NotDefined()),
                            owned_by=req_json.get('owned_by', NotDefined()),
+                           waiting_time=req_json.get('waiting_time', NotDefined()),
                            user_sub=sub)
+
+
+@points.route('/set_availability', methods=['POST'])
+def set_availability():
+    params = request.json
+    availability = params['availability']
+    if availability not in ['short', 'moderate', 'long']:
+        abort(500)
+    es = Elasticsearch(current_app.config['ES_CONNECTION_STRING'], index=current_app.config['INDEX_NAME'])
+    return es.modify_point(point_id=params['id'], waiting_time=params['waiting_time'], user_sub='anonymous',
+                           name=NotDefined(),
+                           operator=NotDefined(),
+                           address=NotDefined(),
+                           lat=NotDefined(),
+                           lon=NotDefined(),
+                           point_type=NotDefined(),
+                           opening_hours=NotDefined(),
+                           phone=NotDefined(),
+                           prepare_instruction=NotDefined(),
+                           owned_by=NotDefined())
 
 
 @points.route('/search_points', methods=['POST'])

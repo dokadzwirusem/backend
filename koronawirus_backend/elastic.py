@@ -8,7 +8,8 @@ class NotDefined:
 
 class Point:
     def __init__(self, name, operator, address, opening_hours, lat, lon, point_type, phone, prepare_instruction,
-                 owned_by, doc_id=None, last_modified_timestamp=None):
+                 owned_by, waiting_time, doc_id=None, last_modified_timestamp=None):
+        self.waiting_time = waiting_time
         self.owned_by = owned_by
         self.prepare_instruction = prepare_instruction
         self.phone = phone
@@ -25,9 +26,10 @@ class Point:
 
     @classmethod
     def new_point(cls, name, operator, address, opening_hours, lat, lon, point_type, phone, prepare_instruction,
-                  user_sub):
+                  waiting_time, user_sub):
         return cls(name=name, operator=operator, address=address, opening_hours=opening_hours, lat=lat, lon=lon,
-                   point_type=point_type, phone=phone, prepare_instruction=prepare_instruction, owned_by=user_sub)
+                   point_type=point_type, phone=phone, prepare_instruction=prepare_instruction,
+                   waiting_time=waiting_time, owned_by=user_sub)
 
     @classmethod
     def from_dict(cls, body):
@@ -36,7 +38,8 @@ class Point:
                    lat=source['location']['lat'], lon=source['location']['lon'], point_type=source['type'],
                    opening_hours=source['opening_hours'], phone=source['phone'],
                    prepare_instruction=source['prepare_instruction'], owned_by=source['owned_by'],
-                   last_modified_timestamp=source['last_modified_timestamp'], doc_id=body['_id'])
+                   last_modified_timestamp=source['last_modified_timestamp'], waiting_time=source['waiting_time'],
+                   doc_id=body['_id'])
 
     def to_dict(self, with_id=False):
         body = {
@@ -51,7 +54,8 @@ class Point:
             "opening_hours": self.opening_hours,
             "phone": self.phone,
             "prepare_instruction": self.prepare_instruction,
-            "last_modified_timestamp": self.last_modified_timestamp
+            "last_modified_timestamp": self.last_modified_timestamp,
+            "waiting_time": self.waiting_time
         }
         if with_id is True:
             body["id"] = self.doc_id
@@ -64,7 +68,7 @@ class Point:
 
 
     def modify(self, name, operator, address, lat, lon, point_type, opening_hours, phone,
-               prepare_instruction, owned_by):
+               prepare_instruction, owned_by, waiting_time):
         params = locals()
         params.pop('self')
         changed = dict()
@@ -251,12 +255,12 @@ class Elasticsearch:
         return {"logs": response['hits']['hits'], "total": response['hits']['total']['value']}
 
     def modify_point(self, point_id, user_sub, name, operator, address, lat, lon,
-                     point_type, opening_hours, phone, prepare_instruction, owned_by):
+                     point_type, opening_hours, phone, prepare_instruction, waiting_time, owned_by):
         body = self.es.get(index=self.index, id=point_id)
         point = Point.from_dict(body=body)
         changes = point.modify(name=name, operator=operator, address=address, lat=lat, lon=lon,
                                point_type=point_type, opening_hours=opening_hours, phone=phone,
-                               prepare_instruction=prepare_instruction, owned_by=owned_by)
+                               prepare_instruction=prepare_instruction, waiting_time=waiting_time, owned_by=owned_by)
         res = self.es.index(index=self.index, id=point_id, body=point.to_index())
         if res['result'] == 'updated':
             self.save_log(user_sub=user_sub, doc_id=point_id, name=point.name, changed=changes)
@@ -264,10 +268,10 @@ class Elasticsearch:
         return res
 
     def add_point(self, name, operator, address, opening_hours, lat, lon, point_type, phone, prepare_instruction,
-                  user_sub):
+                  waiting_time, user_sub):
         point = Point.new_point(name=name, operator=operator, address=address, opening_hours=opening_hours, lat=lat,
                                 lon=lon, point_type=point_type, phone=phone,
-                                prepare_instruction=prepare_instruction, user_sub=user_sub)
+                                prepare_instruction=prepare_instruction, waiting_time=waiting_time, user_sub=user_sub)
         res = self.es.index(index=self.index, body=point.to_index())
         if res['result'] == 'created':
             return self.get_point(point_id=res['_id'])
