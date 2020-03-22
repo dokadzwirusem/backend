@@ -66,7 +66,6 @@ class Point:
         body['owned_by'] = self.owned_by
         return body
 
-
     def modify(self, name, operator, address, lat, lon, point_type, opening_hours, phone,
                prepare_instruction, owned_by, waiting_time):
         params = locals()
@@ -137,47 +136,29 @@ class Elasticsearch:
         return {'points': out_points}
 
     def get_nearest(self, location):
-        body_transport = {
-            "query": {
-                "bool": {
-                    "filter": {
-                        "term": {
-                            "type": "transport"
-                        }
-                    },
-                    "should": {
-                        "distance_feature": {
-                            "field": "location",
-                            "pivot": "1000m",
-                            "origin": [float(location['lat']), float(location['lon'])]
-                        }
-                    }
-                }
-            },
-            "size": 1
-        }
+        body_transport = {'query': {'bool': {'must': [{'term': {'type': 'transport'}},
+                                            {'geo_distance': {'distance': '1000km',
+                                                              'location': {'lat': float(location['lat']),
+                                                                           'lon': float(location['lon'])}}}]}},
+                'size': 1,
+                'sort': [{'_geo_distance': {'location': {'lat': float(location['lat']),
+                                                                           'lon': float(location['lon'])},
+                                            'order': 'asc',
+                                            'unit': 'km'}}]}
+
         response_transport = self.es.search(index=self.index, body=body_transport)
         nearest_transport = Point.from_dict(response_transport['hits']['hits'][0])
 
-        body_hospital = {
-            "query": {
-                "bool": {
-                    "filter": {
-                        "term": {
-                            "type": "hospital"
-                        }
-                    },
-                    "should": {
-                        "distance_feature": {
-                            "field": "location",
-                            "pivot": "1000m",
-                            "origin": [float(location['lat']), float(location['lon'])]
-                        }
-                    }
-                }
-            },
-            "size": 1
-        }
+        body_hospital = {'query': {'bool': {'must': [{'term': {'type': 'hospital'}},
+                                                      {'geo_distance': {'distance': '1000km',
+                                                                        'location': {'lat': float(location['lat']),
+                                                                                     'lon': float(
+                                                                                         location['lon'])}}}]}},
+                          'size': 1,
+                          'sort': [{'_geo_distance': {'location': {'lat': float(location['lat']),
+                                                                   'lon': float(location['lon'])},
+                                                      'order': 'asc',
+                                                      'unit': 'km'}}]}
         response_hospital = self.es.search(index=self.index, body=body_hospital)
         nearest_hospital = Point.from_dict(response_hospital['hits']['hits'][0])
         return {'hospital': nearest_hospital.to_dict(with_id=True),
